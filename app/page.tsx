@@ -7,23 +7,22 @@ type Section = { id: string; title: string; prompt: string; body: string };
 type AIContent = { topic: string; question: string; basic: string; advanced: string; recommendedMaterials: string; perspectiveExamples?: Record<string, string>; pathExamples?: Record<string, string>; pathGuide?: string; reportSections?: Array<{ title: string; prompt: string; body: string }> };
 
 const perspectives: Perspective[] = [
-  { id: "premise", icon: "?", title: "전제", desc: "당연하게 깔고 가는 가정 드러내기", question: "이 주장은 무엇을 전제로 할까?", tint: "lavender" },
-  { id: "definition", icon: "≡", title: "정의", desc: "개념을 자기 언어로 다시 세우기", question: "이 말을 쉽게 다시 정의하면 무엇일까?", tint: "mint" },
-  { id: "depth", icon: "↓", title: "층위", desc: "표면 뒤의 구조와 원리 내려다보기", question: "겉으로 보이는 현상 뒤에는 무엇이 있을까?", tint: "peach" },
-  { id: "unit", icon: "▦", title: "단위", desc: "무엇을 하나로 볼지 바꾸어 보기", question: "개인·집단·전체 중 무엇을 하나로 볼까?", tint: "sky" },
-  { id: "scale", icon: "⌁", title: "척도", desc: "측정하고 평가하는 기준 점검하기", question: "어떤 기준으로 재면 결과가 달라질까?", tint: "yellow" },
-  { id: "scope", icon: "◌", title: "범위", desc: "이론과 규칙이 통하는 경계 찾기", question: "이 설명은 어디까지 적용될까?", tint: "rose" },
-  { id: "opposition", icon: "⇄", title: "대립", desc: "반대 입장을 함께 세워 긴장 보기", question: "반대편에서는 이 문제를 어떻게 볼까?", tint: "blue" },
-  { id: "difference", icon: "≠", title: "차이", desc: "비슷해 보이는 대상의 다름 변별하기", question: "비슷하지만 결정적으로 다른 점은 무엇일까?", tint: "purple" },
-  { id: "similarity", icon: "≈", title: "유사성", desc: "서로 다른 대상의 공통 구조 찾기", question: "다른 영역에서도 같은 구조가 반복될까?", tint: "green" },
-  { id: "hierarchy", icon: "△", title: "위계", desc: "기초·상위·응용의 구조 세우기", question: "무엇이 무엇의 기초 또는 상위에 있을까?", tint: "orange" },
+  { id: "premise", icon: "01", title: "정의", desc: "대상을 분명한 말로 다시 정리해 보기", question: "‘부분분수로 분해한다’는 것은 정확히 무엇을 뜻할까?", tint: "lavender" },
+  { id: "definition", icon: "02", title: "범위", desc: "어디까지 성립하고 어디서 무너지는지 살펴보기", question: "내가 만들려는 일반화 공식은 어떤 범위까지 작동할까?", tint: "mint" },
+  { id: "depth", icon: "03", title: "유사성", desc: "서로 다른 대상에서 같은 구조 찾아보기", question: "부분분수 분해의 구조는 수열·급수에서도 반복될까?", tint: "peach" },
+  { id: "unit", icon: "04", title: "위계", desc: "기본 개념과 그 위에 얹힌 결과의 관계 보기", question: "공식 안에서 무엇이 더 근본이고 무엇이 파생 결과일까?", tint: "sky" },
+  { id: "scale", icon: "05", title: "변수", desc: "결과를 결정하는 매개변수와 관계 찾기", question: "분모의 차수·간격·개수는 결과에 어떤 영향을 줄까?", tint: "yellow" },
+  { id: "scope", icon: "06", title: "조건", desc: "공식이 성립하기 위한 조건을 분명히 하기", question: "이 일반화 공식이 성립하려면 어떤 조건을 만족해야 할까?", tint: "rose" },
+  { id: "opposition", icon: "07", title: "수단", desc: "목표에 도달하는 도구와 절차를 비교하기", question: "공식을 유도할 때 어떤 도구와 순서를 사용해야 할까?", tint: "blue" },
+  { id: "difference", icon: "08", title: "예외", desc: "일반화가 깨지는 자리와 특이점 찾기", question: "내가 세운 공식이 깨지는 자리와 예외는 어디일까?", tint: "purple" },
+  { id: "similarity", icon: "09", title: "사례", desc: "실제 수열·급수 문제에서 구체적으로 확인하기", question: "이 공식은 실제 수열·급수 문제에서 어떻게 나타날까?", tint: "green" },
+  { id: "hierarchy", icon: "10", title: "모형", desc: "복잡한 관계를 그림·표·도식으로 표현하기", question: "부분분수 분해를 어떤 기하적 모형으로 시각화할 수 있을까?", tint: "orange" },
 ];
 
 const paths = [
-  { id: "observe", icon: "◉", title: "관찰형", desc: "직접 보고, 기록하고, 패턴을 찾아요.", time: "1~2주" },
-  { id: "data", icon: "▤", title: "자료 분석형", desc: "통계와 자료를 모아 근거를 비교해요.", time: "2~3주" },
-  { id: "experiment", icon: "⚗", title: "실험·검증형", desc: "가설을 세우고 직접 검증해요.", time: "3~4주" },
-  { id: "project", icon: "⌘", title: "문제 해결형", desc: "해결안을 설계하고 결과물을 만들어요.", time: "3~5주" },
+  { id: "observe", icon: "1", title: "분모 형태의 경계", desc: "분모가 선형·반복근·이차·무리·복소 인수로 바뀔 때 공식이 어디까지 버티는지 살펴봅니다.", time: "1~2주" },
+  { id: "data", icon: "2", title: "수렴의 경계", desc: "부분분수로 분해한 항을 급수로 이었을 때 수렴 범위와 발산 지점을 확인합니다.", time: "2~3주" },
+  { id: "experiment", icon: "3", title: "기하 모형의 사거리", desc: "분해 과정을 도형·면적·길이 모형으로 옮겨 공식이 작동하는 경계를 시각화합니다.", time: "3~4주" },
 ];
 
 function perspectiveExample(interest: string, perspective: Perspective) {
@@ -102,9 +101,9 @@ const defaultSections: Section[] = [
 ];
 
 export default function Home() {
-  const [studentNo, setStudentNo] = useState("20417");
-  const [studentName, setStudentName] = useState("김민서");
-  const [interest, setInterest] = useState("학교 일회용품 사용");
+  const [studentNo, setStudentNo] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [interest, setInterest] = useState("");
   const [step, setStep] = useState(1);
   const [selectedPerspectives, setSelectedPerspectives] = useState<string[]>(["premise", "definition"]);
   const [selectedPath, setSelectedPath] = useState("data");
@@ -112,7 +111,7 @@ export default function Home() {
   const [sections, setSections] = useState(defaultSections);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [toast, setToast] = useState("");
-  const [sessionTitle, setSessionTitle] = useState("학교 일회용품 사용을 줄이는 방법");
+  const [sessionTitle, setSessionTitle] = useState("");
   const [sessions, setSessions] = useState<{ title: string; date: string }[]>([]);
   const [key, setKey] = useState("");
   const [model, setModel] = useState("Gemini 3.5 Flash-Lite");
@@ -125,7 +124,7 @@ export default function Home() {
   useEffect(() => {
     const raw = localStorage.getItem("inquiry-studio-draft");
     if (raw) {
-      try { const draft = JSON.parse(raw); const savedPerspectives = (draft.selectedPerspectives || []).filter((id: string) => perspectives.some((p) => p.id === id)); setStudentNo(draft.studentNo || "20417"); setStudentName(draft.studentName || "김민서"); setInterest(draft.interest || "학교 일회용품 사용"); setSelectedPerspectives(savedPerspectives.length ? savedPerspectives : ["premise", "definition"]); setSelectedPath(draft.selectedPath || "data"); setSections(draft.sections || defaultSections); setSessionTitle(draft.sessionTitle || "학교 일회용품 사용을 줄이는 방법"); } catch { /* use defaults */ }
+      try { const draft = JSON.parse(raw); const savedPerspectives = (draft.selectedPerspectives || []).filter((id: string) => perspectives.some((p) => p.id === id)); setStudentNo(draft.studentNo || ""); setStudentName(draft.studentName || ""); setInterest(draft.interest || ""); setSelectedPerspectives(savedPerspectives.length ? savedPerspectives : ["premise", "definition"]); setSelectedPath(draft.selectedPath || "data"); setSections(draft.sections || defaultSections); setSessionTitle(draft.sessionTitle || ""); } catch { /* use defaults */ }
     }
   }, []);
 
@@ -148,7 +147,7 @@ export default function Home() {
   const primaryPerspective = perspectives.find((p) => p.id === selectedPerspectives[0]);
   const pathTitle = paths.find((p) => p.id === selectedPath)?.title || "탐구 경로";
   const generatedTopic = developedTopic(interest, primaryPerspective, pathTitle);
-  const activeTopic = aiContent?.topic || (sessionTitle === "학교 일회용품 사용을 줄이는 방법" ? generatedTopic : sessionTitle);
+  const activeTopic = aiContent?.topic || sessionTitle || generatedTopic;
   const togglePerspective = (id: string) => setSelectedPerspectives((current) => current.includes(id) ? current.filter((x) => x !== id) : current.length < 3 ? [...current, id] : current);
   const updateSection = (id: string, body: string) => setSections((current) => current.map((section) => section.id === id ? { ...section, body } : section));
   const notify = (message: string) => { setToast(message); setTimeout(() => setToast(""), 2400); };
