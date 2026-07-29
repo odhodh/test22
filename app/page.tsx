@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Perspective = { id: string; icon: string; title: string; desc: string; question: string; tint: string };
 type Section = { id: string; title: string; prompt: string; body: string };
+type AIContent = { topic: string; question: string; basic: string; advanced: string; recommendedMaterials: string };
 
 const perspectives: Perspective[] = [
   { id: "premise", icon: "?", title: "전제", desc: "당연하게 깔고 가는 가정 드러내기", question: "이 주장은 무엇을 전제로 할까?", tint: "lavender" },
@@ -113,6 +114,12 @@ export default function Home() {
   const [toast, setToast] = useState("");
   const [sessionTitle, setSessionTitle] = useState("학교 일회용품 사용을 줄이는 방법");
   const [sessions, setSessions] = useState<{ title: string; date: string }[]>([]);
+  const [key, setKey] = useState("");
+  const [model, setModel] = useState("Gemini 3.5 Flash-Lite");
+  const [settings, setSettings] = useState(false);
+  const [aiContent, setAiContent] = useState<AIContent | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiStatus, setAiStatus] = useState("");
 
   useEffect(() => {
     const raw = localStorage.getItem("inquiry-studio-draft");
@@ -129,6 +136,12 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [studentNo, studentName, interest, selectedPerspectives, selectedPath, sections, sessionTitle]);
 
+  useEffect(() => {
+    const settings = localStorage.getItem("inquiry-studio-settings");
+    if (settings) { try { const value = JSON.parse(settings); setKey(value.key || ""); setModel(value.model || "Gemini 3.5 Flash-Lite"); } catch { /* use defaults */ } }
+  }, []);
+  useEffect(() => { if (key || model) localStorage.setItem("inquiry-studio-settings", JSON.stringify({ key, model })); }, [key, model]);
+
   const selectedNames = useMemo(() => perspectives.filter((p) => selectedPerspectives.includes(p.id)).map((p) => p.title), [selectedPerspectives]);
   const primaryPerspective = perspectives.find((p) => p.id === selectedPerspectives[0]);
   const pathTitle = paths.find((p) => p.id === selectedPath)?.title || "탐구 경로";
@@ -139,7 +152,20 @@ export default function Home() {
   const notify = (message: string) => { setToast(message); setTimeout(() => setToast(""), 2400); };
   const saveSession = () => { setSessions((current) => [{ title: activeTopic, date: new Date().toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) }, ...current]); notify("탐구 세션을 저장했어요"); };
 
-  return <main className="inquiry-app">
+  async function generateWithGoogle() {
+    if (!key) { setSettings(true); notify("개인 설정에서 Gemini API 키를 먼저 입력해 주세요"); return; }
+    setAiLoading(true); setAiStatus("Gemini가 주제에 맞는 탐구 내용을 찾고 있어요...");
+    try {
+      const response = await fetch("/api/inquiry/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: key, model, interest, perspectives: selectedNames, path: pathTitle }) });
+      const data = await response.json() as AIContent & { error?: string };
+      if (!response.ok) throw new Error(data.error || "API 요청에 실패했습니다.");
+      setAiContent(data); setSessionTitle(data.topic); setAiStatus("Google Gemini가 생성한 내용이 반영되었어요");
+    } catch (error) { setAiStatus(error instanceof Error ? error.message : "생성 중 오류가 발생했습니다."); }
+    finally { setAiLoading(false); }
+  }
+
+  return <main className="inquiry-app">{step === 4 && <div className="google-inquiry-panel"><div><strong>Google Gemini로 탐구 내용 확장</strong><small>관심 주제와 선택한 사고 형식을 바탕으로 기본·심화 탐구 내용을 생성합니다.</small></div><button className="ai-button" onClick={generateWithGoogle} disabled={aiLoading}>{aiLoading ? "생성 중..." : "✦ Google로 생성"}</button>{aiStatus && <span className="ai-status-inline">{aiStatus}</span>}{aiContent && <div className="ai-result"><b>{aiContent.topic}</b><strong>기본 탐구</strong><p>{aiContent.basic}</p><strong>심화 탐구</strong><p>{aiContent.advanced}</p><strong>추천 자료</strong><p>{aiContent.recommendedMaterials}</p></div>}</div>}
+    {settings && <div className="modal-backdrop" onClick={() => setSettings(false)}><div className="modal" onClick={(event) => event.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">개인 설정</span><h2>Google API 설정</h2></div><button onClick={() => setSettings(false)}>×</button></div><label>Gemini API 키<input type="password" placeholder="AIza..." value={key} onChange={(event) => setKey(event.target.value)} /><small>API 호출에만 사용되며 이 브라우저에 저장됩니다.</small></label><label>선호 모델<select value={model} onChange={(event) => setModel(event.target.value)}><option>Gemini 3.5 Flash-Lite</option><option>Gemini 2.5 Flash</option><option>Gemini 2.5 Flash-Lite</option></select></label><button className="primary-button" onClick={() => { localStorage.setItem("inquiry-studio-settings", JSON.stringify({ key, model })); setSettings(false); notify("Google API 설정을 저장했어요"); }}>설정 저장 <span>→</span></button></div></div>}
     <aside className="inquiry-sidebar">
       <div className="inquiry-brand"><span className="brand-mark">탐</span><div><strong>탐구 주제 잡기</strong><small>Inquiry Studio</small></div></div>
       <div className="student-chip"><span className="student-avatar">{studentName.slice(0, 1)}</span><div><strong>{studentName}</strong><small>{studentNo} · 고등학교 2학년</small></div><span className="chevron">⌄</span></div>
