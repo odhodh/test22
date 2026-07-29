@@ -2,20 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Perspective = { id: string; icon: string; title: string; desc: string; tint: string };
+type Perspective = { id: string; icon: string; title: string; desc: string; question: string; tint: string };
 type Section = { id: string; title: string; prompt: string; body: string };
 
 const perspectives: Perspective[] = [
-  { id: "why", icon: "?", title: "왜 그럴까?", desc: "원인과 이유를 파고들기", tint: "lavender" },
-  { id: "change", icon: "↗", title: "어떻게 달라질까?", desc: "변화와 흐름 관찰하기", tint: "mint" },
-  { id: "compare", icon: "⇄", title: "무엇이 다를까?", desc: "차이와 공통점 비교하기", tint: "peach" },
-  { id: "connect", icon: "⌁", title: "무엇과 연결될까?", desc: "관계와 영향 찾아보기", tint: "sky" },
-  { id: "solve", icon: "✦", title: "어떻게 해결할까?", desc: "문제 해결 방법 제안하기", tint: "yellow" },
-  { id: "future", icon: "◌", title: "앞으로 어떻게 될까?", desc: "미래 모습 예측하기", tint: "rose" },
-  { id: "people", icon: "◎", title: "누구에게 어떤 의미일까?", desc: "사람과 사회의 관점", tint: "blue" },
-  { id: "value", icon: "◇", title: "무엇이 중요할까?", desc: "가치와 기준 생각하기", tint: "purple" },
-  { id: "make", icon: "＋", title: "무엇을 만들어볼까?", desc: "실천과 결과물 설계하기", tint: "green" },
-  { id: "question", icon: "!", title: "어떤 질문이 남을까?", desc: "새로운 궁금증 확장하기", tint: "orange" },
+  { id: "premise", icon: "?", title: "전제", desc: "당연하게 깔고 가는 가정 드러내기", question: "이 주장은 무엇을 전제로 할까?", tint: "lavender" },
+  { id: "definition", icon: "≡", title: "정의", desc: "개념을 자기 언어로 다시 세우기", question: "이 말을 쉽게 다시 정의하면 무엇일까?", tint: "mint" },
+  { id: "depth", icon: "↓", title: "층위", desc: "표면 뒤의 구조와 원리 내려다보기", question: "겉으로 보이는 현상 뒤에는 무엇이 있을까?", tint: "peach" },
+  { id: "unit", icon: "▦", title: "단위", desc: "무엇을 하나로 볼지 바꾸어 보기", question: "개인·집단·전체 중 무엇을 하나로 볼까?", tint: "sky" },
+  { id: "scale", icon: "⌁", title: "척도", desc: "측정하고 평가하는 기준 점검하기", question: "어떤 기준으로 재면 결과가 달라질까?", tint: "yellow" },
+  { id: "scope", icon: "◌", title: "범위", desc: "이론과 규칙이 통하는 경계 찾기", question: "이 설명은 어디까지 적용될까?", tint: "rose" },
+  { id: "opposition", icon: "⇄", title: "대립", desc: "반대 입장을 함께 세워 긴장 보기", question: "반대편에서는 이 문제를 어떻게 볼까?", tint: "blue" },
+  { id: "difference", icon: "≠", title: "차이", desc: "비슷해 보이는 대상의 다름 변별하기", question: "비슷하지만 결정적으로 다른 점은 무엇일까?", tint: "purple" },
+  { id: "similarity", icon: "≈", title: "유사성", desc: "서로 다른 대상의 공통 구조 찾기", question: "다른 영역에서도 같은 구조가 반복될까?", tint: "green" },
+  { id: "hierarchy", icon: "△", title: "위계", desc: "기초·상위·응용의 구조 세우기", question: "무엇이 무엇의 기초 또는 상위에 있을까?", tint: "orange" },
 ];
 
 const paths = [
@@ -37,7 +37,7 @@ export default function Home() {
   const [studentNo, setStudentNo] = useState("20417");
   const [studentName, setStudentName] = useState("김민서");
   const [step, setStep] = useState(1);
-  const [selectedPerspectives, setSelectedPerspectives] = useState<string[]>(["why", "solve"]);
+  const [selectedPerspectives, setSelectedPerspectives] = useState<string[]>(["premise", "definition"]);
   const [selectedPath, setSelectedPath] = useState("data");
   const [activeDepth, setActiveDepth] = useState<"basic" | "advanced">("basic");
   const [sections, setSections] = useState(defaultSections);
@@ -49,7 +49,7 @@ export default function Home() {
   useEffect(() => {
     const raw = localStorage.getItem("inquiry-studio-draft");
     if (raw) {
-      try { const draft = JSON.parse(raw); setStudentNo(draft.studentNo || "20417"); setStudentName(draft.studentName || "김민서"); setSelectedPerspectives(draft.selectedPerspectives || ["why", "solve"]); setSelectedPath(draft.selectedPath || "data"); setSections(draft.sections || defaultSections); setSessionTitle(draft.sessionTitle || "학교 일회용품 사용을 줄이는 방법"); } catch { /* use defaults */ }
+      try { const draft = JSON.parse(raw); const savedPerspectives = (draft.selectedPerspectives || []).filter((id: string) => perspectives.some((p) => p.id === id)); setStudentNo(draft.studentNo || "20417"); setStudentName(draft.studentName || "김민서"); setSelectedPerspectives(savedPerspectives.length ? savedPerspectives : ["premise", "definition"]); setSelectedPath(draft.selectedPath || "data"); setSections(draft.sections || defaultSections); setSessionTitle(draft.sessionTitle || "학교 일회용품 사용을 줄이는 방법"); } catch { /* use defaults */ }
     }
   }, []);
 
@@ -80,7 +80,7 @@ export default function Home() {
       <header className="inquiry-header"><div><span className="kicker">2026학년도 · 탐구 활동 설계</span><h1>나만의 탐구 주제 만들기</h1><p>생각의 방향을 고르고, 질문을 구체적인 탐구 계획으로 바꿔보세요.</p></div><div className="header-status"><span className="status-dot" />{savedAt ? `${savedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 저장됨` : "저장 준비 중"}<button onClick={saveSession}>세션 저장</button></div></header>
       <div className="step-heading"><div><span className="large-step">0{step}</span><div><span className="kicker">STEP {step} OF 6</span><h2>{step === 1 ? "탐구자 정보를 알려주세요" : step === 2 ? "어떤 관점으로 바라볼까요?" : step === 3 ? "탐구 방법을 골라보세요" : step === 4 ? "탐구 내용을 확인해보세요" : step === 5 ? "보고서의 뼈대를 다듬어보세요" : "탐구 설계가 완성되었어요"}</h2></div></div><span className="step-help">{step === 2 ? "최대 3개까지 선택" : "진행하면서 언제든 수정할 수 있어요"}</span></div>
       {step === 1 && <section className="step-panel profile-panel"><div className="panel-intro"><span className="intro-icon">✎</span><div><h3>탐구를 시작하는 사람</h3><p>이름과 학번을 입력하면 나중에 저장한 탐구를 쉽게 찾을 수 있어요.</p></div></div><div className="profile-form"><label>학번 <i>*</i><input value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="예: 20417" /></label><label>이름 <i>*</i><input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="예: 김민서" /></label></div><div className="example-callout"><span>☼</span><div><strong>탐구는 거창하지 않아도 괜찮아요</strong><p>매일 보는 현상, 수업 중 생긴 질문, 해결해보고 싶은 불편함에서 시작할 수 있어요.</p></div></div></section>}
-      {step === 2 && <section className="step-panel"><div className="selection-summary"><span>선택한 관점</span><strong>{selectedNames.length ? selectedNames.join(" · ") : "아직 선택하지 않았어요"}</strong></div><div className="perspective-grid">{perspectives.map((p) => <button key={p.id} className={`perspective-card ${p.tint} ${selectedPerspectives.includes(p.id) ? "selected" : ""}`} onClick={() => togglePerspective(p.id)}><span className="perspective-icon">{p.icon}</span><span className="card-check">{selectedPerspectives.includes(p.id) ? "✓" : ""}</span><strong>{p.title}</strong><small>{p.desc}</small></button>)}</div></section>}
+      {step === 2 && <section className="step-panel"><div className="selection-summary"><span>선택한 사고 형식</span><strong>{selectedNames.length ? selectedNames.join(" · ") : "아직 선택하지 않았어요"}</strong></div><div className="perspective-grid">{perspectives.map((p) => <button key={p.id} className={`perspective-card ${p.tint} ${selectedPerspectives.includes(p.id) ? "selected" : ""}`} onClick={() => togglePerspective(p.id)}><span className="perspective-icon">{p.icon}</span><span className="card-check">{selectedPerspectives.includes(p.id) ? "✓" : ""}</span><strong>{p.title}</strong><small>{p.desc}</small><em>{p.question}</em></button>)}</div></section>}
       {step === 3 && <section className="step-panel"><div className="path-list">{paths.map((path) => <button key={path.id} className={`path-card ${selectedPath === path.id ? "selected" : ""}`} onClick={() => setSelectedPath(path.id)}><span className="path-icon">{path.icon}</span><span className="path-copy"><strong>{path.title}</strong><small>{path.desc}</small></span><span className="path-time">예상 {path.time}</span><span className="radio">{selectedPath === path.id ? "✓" : ""}</span></button>)}</div><div className="path-preview"><div><span className="preview-label">선택한 경로</span><h3>{paths.find((p) => p.id === selectedPath)?.title}</h3><p>{paths.find((p) => p.id === selectedPath)?.desc}</p></div><span className="preview-arrow">→</span></div></section>}
       {step === 4 && <section className="step-panel content-panel"><div className="topic-banner"><span className="topic-spark">✦</span><div><small>현재까지의 선택을 바탕으로 만든 탐구 주제</small><h3>{sessionTitle}</h3><div className="topic-tags">{selectedNames.map((name) => <span key={name}>{name}</span>)}<span>{paths.find((p) => p.id === selectedPath)?.title}</span></div></div><button onClick={() => setStep(5)}>주제 수정</button></div><div className="depth-tabs"><button className={activeDepth === "basic" ? "active" : ""} onClick={() => setActiveDepth("basic")}>기본 탐구 <small>핵심 질문과 관찰</small></button><button className={activeDepth === "advanced" ? "active" : ""} onClick={() => setActiveDepth("advanced")}>심화 탐구 <small>분석과 확장 질문</small></button></div><div className="content-check"><span className="check-badge">✓</span><div><strong>{activeDepth === "basic" ? "먼저 이 정도로 시작해보세요" : "여기서 한 단계 더 깊게"}</strong><p>{activeDepth === "basic" ? "학교 안에서 일회용품이 얼마나 사용되는지 관찰하고, 사용이 많은 상황과 이유를 찾아봅니다." : "학급별·시간대별 차이를 비교하고, 비용과 환경 영향을 함께 고려해 실천 가능한 대안을 설계합니다."}</p></div></div><div className="question-grid"><div><span>핵심 질문</span><strong>{activeDepth === "basic" ? "우리 학교에서 일회용품 사용이 많은 상황은 언제일까?" : "사용량을 줄이는 방법 중 가장 지속 가능한 방법은 무엇일까?"}</strong></div><div><span>추천 자료</span><strong>{activeDepth === "basic" ? "관찰 기록 · 학생 인터뷰 · 사용량 체크표" : "설문 통계 · 사례 비교 · 비용 계산표"}</strong></div></div></section>}
       {step === 5 && <section className="step-panel editor-panel"><div className="editor-top"><div><span className="kicker">REPORT TITLE</span><input className="title-input" value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} /></div><span className="edit-hint">내용을 클릭해 바로 수정하세요</span></div><div className="report-editor"><div className="toc"><div className="toc-title">목차 <span>5</span></div>{sections.map((section, index) => <button key={section.id} className={index === 0 ? "active" : ""}><span>0{index + 1}</span>{section.title.replace(/^\d\. /, "")}</button>)}</div><div className="section-editor">{sections.map((section) => <article key={section.id} className="editable-section"><div><span className="section-number">{section.title.split(".")[0]}</span><div><h3>{section.title.replace(/^\d\. /, "")}</h3><small>{section.prompt}</small></div></div><textarea value={section.body} onChange={(e) => updateSection(section.id, e.target.value)} /></article>)}</div></div></section>}
