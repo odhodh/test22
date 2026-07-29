@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Perspective = { id: string; icon: string; title: string; desc: string; question: string; tint: string };
 type Section = { id: string; title: string; prompt: string; body: string };
-type AIContent = { topic: string; question: string; basic: string; advanced: string; recommendedMaterials: string };
+type AIContent = { topic: string; question: string; basic: string; advanced: string; recommendedMaterials: string; reportSections?: Array<{ title: string; prompt: string; body: string }> };
 
 const perspectives: Perspective[] = [
   { id: "premise", icon: "?", title: "전제", desc: "당연하게 깔고 가는 가정 드러내기", question: "이 주장은 무엇을 전제로 할까?", tint: "lavender" },
@@ -159,7 +159,7 @@ export default function Home() {
       const response = await fetch("/api/inquiry/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: key, model, interest, perspectives: selectedNames, path: pathTitle }) });
       const data = await response.json() as AIContent & { error?: string };
       if (!response.ok) throw new Error(data.error || "API 요청에 실패했습니다.");
-      setAiContent(data); setSessionTitle(data.topic); setAiStatus("Google Gemini가 생성한 내용이 반영되었어요");
+      setAiContent(data); setSessionTitle(data.topic); if (data.reportSections?.length) setSections(data.reportSections.map((section, index) => ({ id: `ai-${index}`, ...section }))); setAiStatus("Google Gemini가 검색한 자료와 생성한 보고서 초안을 반영했어요");
     } catch (error) { setAiStatus(error instanceof Error ? error.message : "생성 중 오류가 발생했습니다."); }
     finally { setAiLoading(false); }
   }
