@@ -1,19 +1,92 @@
 "use client";
-import { useEffect, useState } from "react";
-type Result = { subject: string; text: string; tags: string[] };
-const subjects = ["국어", "수학", "영어", "통합사회", "통합과학", "정보", "미술", "체육"];
-const initial: Result[] = [{ subject: "정보", tags: ["문제 정의", "데이터 구조화", "협업"], text: "생활 속 불편을 구체적인 문제로 정의하고 필요한 정보를 항목별로 구조화하여 해결 과정을 설계함. 팀원과 근거를 바탕으로 의견을 나누고 피드백을 반영해 결과물을 개선하는 모습을 보임." }, { subject: "통합과학", tags: ["관찰", "변인 통제", "해석"], text: "관찰을 바탕으로 탐구 질문을 구체화하고 실험 과정에서 변인을 통제하려는 태도를 보임. 측정 결과를 표와 그래프로 정리하여 경향을 해석하고 관찰 사실과 해석을 구분하여 설명함." }];
-function makeResult(subject: string, notes: string): Result { const tags = subject === "정보" ? ["문제 정의", "데이터 구조화", "협업"] : ["관찰", "탐구", "성찰"]; return { subject, tags, text: `활동 과정을 분명한 질문을 중심으로 정리하고 근거를 들어 결과를 설명함. 특히 ${notes || "입력한 활동"}에서 여러 대안을 탐색하고 결과를 공유하며 다음 활동을 성찰하는 모습을 보임.` }; }
+
+import { useEffect, useMemo, useState } from "react";
+
+type Perspective = { id: string; icon: string; title: string; desc: string; tint: string };
+type Section = { id: string; title: string; prompt: string; body: string };
+
+const perspectives: Perspective[] = [
+  { id: "why", icon: "?", title: "왜 그럴까?", desc: "원인과 이유를 파고들기", tint: "lavender" },
+  { id: "change", icon: "↗", title: "어떻게 달라질까?", desc: "변화와 흐름 관찰하기", tint: "mint" },
+  { id: "compare", icon: "⇄", title: "무엇이 다를까?", desc: "차이와 공통점 비교하기", tint: "peach" },
+  { id: "connect", icon: "⌁", title: "무엇과 연결될까?", desc: "관계와 영향 찾아보기", tint: "sky" },
+  { id: "solve", icon: "✦", title: "어떻게 해결할까?", desc: "문제 해결 방법 제안하기", tint: "yellow" },
+  { id: "future", icon: "◌", title: "앞으로 어떻게 될까?", desc: "미래 모습 예측하기", tint: "rose" },
+  { id: "people", icon: "◎", title: "누구에게 어떤 의미일까?", desc: "사람과 사회의 관점", tint: "blue" },
+  { id: "value", icon: "◇", title: "무엇이 중요할까?", desc: "가치와 기준 생각하기", tint: "purple" },
+  { id: "make", icon: "＋", title: "무엇을 만들어볼까?", desc: "실천과 결과물 설계하기", tint: "green" },
+  { id: "question", icon: "!", title: "어떤 질문이 남을까?", desc: "새로운 궁금증 확장하기", tint: "orange" },
+];
+
+const paths = [
+  { id: "observe", icon: "◉", title: "관찰형", desc: "직접 보고, 기록하고, 패턴을 찾아요.", time: "1~2주" },
+  { id: "data", icon: "▤", title: "자료 분석형", desc: "통계와 자료를 모아 근거를 비교해요.", time: "2~3주" },
+  { id: "experiment", icon: "⚗", title: "실험·검증형", desc: "가설을 세우고 직접 검증해요.", time: "3~4주" },
+  { id: "project", icon: "⌘", title: "문제 해결형", desc: "해결안을 설계하고 결과물을 만들어요.", time: "3~5주" },
+];
+
+const defaultSections: Section[] = [
+  { id: "intro", title: "1. 탐구 동기와 질문", prompt: "왜 이 주제를 탐구하게 되었나요?", body: "평소 학교 주변의 일회용품 사용량이 많다는 점에 관심이 생겼다.\n우리 학교에서 일회용품 사용을 줄이려면 어떤 방법이 효과적일까?" },
+  { id: "background", title: "2. 배경 지식과 자료 조사", prompt: "주제를 이해하기 위해 어떤 자료를 찾아보았나요?", body: "일회용품의 종류와 분해 기간, 학교 구성원의 사용 습관에 관한 자료를 조사한다." },
+  { id: "method", title: "3. 탐구 방법", prompt: "어떤 순서와 방법으로 탐구했나요?", body: "일주일 동안 학급별 사용 현황을 관찰하고, 학생 설문을 실시한 뒤 결과를 비교한다." },
+  { id: "result", title: "4. 탐구 결과와 해석", prompt: "자료에서 어떤 결과를 발견했나요?", body: "관찰 기록과 설문 결과를 표와 그래프로 정리하고, 반복해서 나타나는 특징을 해석한다." },
+  { id: "conclusion", title: "5. 결론과 제안", prompt: "탐구를 통해 무엇을 알게 되었고 무엇을 제안하나요?", body: "탐구 결과를 바탕으로 실천 가능한 개선 방법을 제안하고, 후속 탐구 질문을 정리한다." },
+];
+
 export default function Home() {
-  const [tab, setTab] = useState("새로 작성하기"); const [id, setId] = useState("S-2026-041"); const [grade, setGrade] = useState("고 2"); const [selected, setSelected] = useState(["정보", "통합과학"]); const [notes, setNotes] = useState("학교 주변의 불편한 점을 관찰하고 해결 아이디어를 팀원들과 정리함. 역할을 나누어 자료를 조사하고 결과를 발표함."); const [results, setResults] = useState(initial); const [done, setDone] = useState(false); const [running, setRunning] = useState(false); const [saved, setSaved] = useState<{ id: string; date: string; results: Result[] }[]>([]); const [settings, setSettings] = useState(false); const [key, setKey] = useState(""); const [model, setModel] = useState("Gemini 3.5 Flash-Lite"); const [toast, setToast] = useState("");
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  useEffect(() => { if (!supabaseUrl || !supabaseKey) return; fetch(`${supabaseUrl}/rest/v1/saeteuk_records?select=*&order=created_at.desc`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }).then(r => r.ok ? r.json() : []).then(rows => setSaved(rows.map((x: { student_id: string; created_at: string; results: Result[] }) => ({ id: x.student_id, date: new Date(x.created_at).toLocaleDateString(), results: x.results || [] })))); }, [supabaseUrl, supabaseKey]);
-  const toggle = (s: string) => setSelected(x => x.includes(s) ? x.filter(y => y !== s) : [...x, s]);
-  async function generate() { setRunning(true); setDone(false); await new Promise(r => setTimeout(r, 850)); setResults(selected.map(s => makeResult(s, notes))); setDone(true); setRunning(false); }
-  async function save() { const item = { student_id: id, grade, subject: selected.join(" · "), created_at: new Date().toISOString(), results }; if (supabaseUrl && supabaseKey) await fetch(`${supabaseUrl}/rest/v1/saeteuk_records`, { method: "POST", headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(item) }); setSaved(x => [{ id, date: new Date().toLocaleDateString(), results }, ...x]); setToast(supabaseUrl ? "Saved to Supabase" : "Saved in demo mode"); setTimeout(() => setToast(""), 2200); }
-  function download() { const blob = new Blob([results.map(r => `[${r.subject}]\n${r.text}`).join("\n\n")], { type: "text/plain" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${id}-saeteuk.txt`; a.click(); }
-  return <main className="app-shell"><aside className="sidebar"><div className="brand"><span className="brand-mark">S</span> 세특 스튜디오</div><div className="workspace-label">작업 공간</div><button className={tab === "새로 작성하기" ? "nav-item active" : "nav-item"} onClick={() => setTab("새로 작성하기")}>✦ 새로 작성하기</button><button className={tab === "저장 내역" ? "nav-item active" : "nav-item"} onClick={() => setTab("저장 내역")}>▣ 저장 내역 <em>{saved.length}</em></button><div className="agent-box"><div className="box-title">에이전트 팀 <span className="live-dot" /> 실행 중</div><Agent icon="◎" name="수집 에이전트" text="키워드와 맥락 정리" /><Agent icon="✎" name="작성 에이전트" text="과목별 초안 작성" /><Agent icon="✓" name="검토 에이전트" text="표현 규정 점검" /></div><div className="sidebar-foot"><button onClick={() => setSettings(true)}>⚙ 개인 설정</button><div className="profile"><div className="avatar">김</div><div><strong>김교사</strong><small>담임 교사</small></div></div></div></aside><section className="content"><header className="topbar"><div><div className="eyebrow">2026학년도 · 2학기</div><h1>{tab === "저장 내역" ? "저장 내역" : "세특 문구 작성"}</h1></div><div className="top-actions"><span className="saved-badge">● 자동 저장 켜짐</span><button className="icon-button" onClick={() => setSettings(true)}>⚙</button></div></header>{tab === "저장 내역" ? <History saved={saved} /> : <div className="work-grid"><section className="input-panel"><div className="section-heading"><div><span className="step">01</span><h2>활동 정보 입력</h2></div><span className="required">필수 항목 <i>*</i></span></div><label>학생 식별값 <i>*</i><input value={id} onChange={e => setId(e.target.value)} /></label><div className="two-col"><label>학년 <i>*</i><select value={grade} onChange={e => setGrade(e.target.value)}><option>고 1</option><option>고 2</option><option>고 3</option></select></label><label>과목 <i>*</i><div className="subject-select">{selected.join(" · ") || "과목 선택"}<span>⌄</span></div></label></div><label>활동 키워드 또는 관찰 내용 <i>*</i><textarea value={notes} onChange={e => setNotes(e.target.value)} /><small className="helper">관찰한 사실과 활동 과정을 중심으로 입력해 주세요. <b>{notes.length}</b>/500</small></label><div className="chips">{subjects.map(s => <button key={s} className={selected.includes(s) ? "chip selected" : "chip"} onClick={() => toggle(s)}><span />{s}</button>)}</div><button className="generate" onClick={generate} disabled={running || !selected.length}>{running ? "에이전트 팀이 작성 중..." : "✦ 세특 초안 생성하기"}<span>→</span></button><div className="privacy">▣ <div><strong>안전한 작성 환경</strong><br />입력 내용은 초안 생성에만 사용됩니다.</div></div></section><section className="result-panel"><div className="result-head"><div><span className="step">02</span><h2>검토된 초안</h2></div><div className="result-buttons"><button className="outline" onClick={download}>⇩ 텍스트 다운로드</button><button className="save" onClick={save} disabled={!done}>저장하기</button></div></div><div className="pipeline"><Pipeline n="1" title="수집" done={done} /><span className="line" /><Pipeline n="2" title="작성" done={done} /><span className="line" /><Pipeline n="3" title="검토" done={done} /></div>{done && <div className="notice">✓ 검토 에이전트가 단정적 서술, 순위 표현, 과장 표현을 확인했습니다.</div>}<div className="cards">{results.map(r => <article className="result-card" key={r.subject}><div className="card-title"><span className="subject-dot" /><h3>{r.subject}</h3><span className="reviewed">✓ 검토 완료</span></div><p>{r.text}</p><div className="tag-row">{r.tags.map(t => <span key={t}># {t}</span>)}</div></article>)}</div></section></div>}</section>{settings && <div className="modal-backdrop" onClick={() => setSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">개인 설정</span><h2>개인 설정</h2></div><button onClick={() => setSettings(false)}>×</button></div><label>Gemini API 키<input type="password" placeholder="AIza..." value={key} onChange={e => setKey(e.target.value)} /><small>이 브라우저에만 저장됩니다.</small></label><label>선호 모델<select value={model} onChange={e => setModel(e.target.value)}><option>Gemini 3.5 Flash-Lite</option><option>Gemini 3 Flash</option><option>Gemini 2.5 Flash</option></select></label><button className="generate" onClick={() => { setSettings(false); setToast("개인 설정을 저장했습니다"); }}>설정 저장 <span>→</span></button></div></div>}{toast && <div className="toast">✓ {toast}</div>}</main>;
+  const [studentNo, setStudentNo] = useState("20417");
+  const [studentName, setStudentName] = useState("김민서");
+  const [step, setStep] = useState(1);
+  const [selectedPerspectives, setSelectedPerspectives] = useState<string[]>(["why", "solve"]);
+  const [selectedPath, setSelectedPath] = useState("data");
+  const [activeDepth, setActiveDepth] = useState<"basic" | "advanced">("basic");
+  const [sections, setSections] = useState(defaultSections);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [toast, setToast] = useState("");
+  const [sessionTitle, setSessionTitle] = useState("학교 일회용품 사용을 줄이는 방법");
+  const [sessions, setSessions] = useState<{ title: string; date: string }[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("inquiry-studio-draft");
+    if (raw) {
+      try { const draft = JSON.parse(raw); setStudentNo(draft.studentNo || "20417"); setStudentName(draft.studentName || "김민서"); setSelectedPerspectives(draft.selectedPerspectives || ["why", "solve"]); setSelectedPath(draft.selectedPath || "data"); setSections(draft.sections || defaultSections); setSessionTitle(draft.sessionTitle || "학교 일회용품 사용을 줄이는 방법"); } catch { /* use defaults */ }
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem("inquiry-studio-draft", JSON.stringify({ studentNo, studentName, selectedPerspectives, selectedPath, sections, sessionTitle }));
+      setSavedAt(new Date());
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [studentNo, studentName, selectedPerspectives, selectedPath, sections, sessionTitle]);
+
+  const selectedNames = useMemo(() => perspectives.filter((p) => selectedPerspectives.includes(p.id)).map((p) => p.title), [selectedPerspectives]);
+  const togglePerspective = (id: string) => setSelectedPerspectives((current) => current.includes(id) ? current.filter((x) => x !== id) : current.length < 3 ? [...current, id] : current);
+  const updateSection = (id: string, body: string) => setSections((current) => current.map((section) => section.id === id ? { ...section, body } : section));
+  const notify = (message: string) => { setToast(message); setTimeout(() => setToast(""), 2400); };
+  const saveSession = () => { setSessions((current) => [{ title: sessionTitle, date: new Date().toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) }, ...current]); notify("탐구 세션을 저장했어요"); };
+
+  return <main className="inquiry-app">
+    <aside className="inquiry-sidebar">
+      <div className="inquiry-brand"><span className="brand-mark">탐</span><div><strong>탐구 주제 잡기</strong><small>Inquiry Studio</small></div></div>
+      <div className="student-chip"><span className="student-avatar">{studentName.slice(0, 1)}</span><div><strong>{studentName}</strong><small>{studentNo} · 고등학교 2학년</small></div><span className="chevron">⌄</span></div>
+      <div className="progress-label"><span>탐구 만들기</span><b>{step}/6</b></div>
+      <nav className="step-nav">{[[1, "기본 정보", "학번·이름"], [2, "관점 선택", "10가지 관점 카드"], [3, "탐구 경로", "탐구 방식 고르기"], [4, "탐구 내용", "기본·심화 확인"], [5, "보고서 편집", "목차와 내용"], [6, "완성", "저장 및 확인"]].map(([number, label, sub]) => <button key={number as number} className={step === number ? "step-link active" : step > (number as number) ? "step-link complete" : "step-link"} onClick={() => setStep(number as number)}><span className="step-number">{step > (number as number) ? "✓" : number}</span><span><strong>{label}</strong><small>{sub}</small></span></button>)}</nav>
+      <div className="sidebar-note"><span>✦</span><p><strong>좋은 탐구의 시작</strong><br />궁금한 것을 작게 쪼개고,<br />직접 확인할 방법을 찾아보세요.</p></div>
+      <button className="session-list-button" onClick={() => notify(`${sessions.length}개의 저장 세션이 있어요`)}>▣ 저장한 세션 <em>{sessions.length}</em></button>
+    </aside>
+    <section className="inquiry-content">
+      <header className="inquiry-header"><div><span className="kicker">2026학년도 · 탐구 활동 설계</span><h1>나만의 탐구 주제 만들기</h1><p>생각의 방향을 고르고, 질문을 구체적인 탐구 계획으로 바꿔보세요.</p></div><div className="header-status"><span className="status-dot" />{savedAt ? `${savedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 저장됨` : "저장 준비 중"}<button onClick={saveSession}>세션 저장</button></div></header>
+      <div className="step-heading"><div><span className="large-step">0{step}</span><div><span className="kicker">STEP {step} OF 6</span><h2>{step === 1 ? "탐구자 정보를 알려주세요" : step === 2 ? "어떤 관점으로 바라볼까요?" : step === 3 ? "탐구 방법을 골라보세요" : step === 4 ? "탐구 내용을 확인해보세요" : step === 5 ? "보고서의 뼈대를 다듬어보세요" : "탐구 설계가 완성되었어요"}</h2></div></div><span className="step-help">{step === 2 ? "최대 3개까지 선택" : "진행하면서 언제든 수정할 수 있어요"}</span></div>
+      {step === 1 && <section className="step-panel profile-panel"><div className="panel-intro"><span className="intro-icon">✎</span><div><h3>탐구를 시작하는 사람</h3><p>이름과 학번을 입력하면 나중에 저장한 탐구를 쉽게 찾을 수 있어요.</p></div></div><div className="profile-form"><label>학번 <i>*</i><input value={studentNo} onChange={(e) => setStudentNo(e.target.value)} placeholder="예: 20417" /></label><label>이름 <i>*</i><input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="예: 김민서" /></label></div><div className="example-callout"><span>☼</span><div><strong>탐구는 거창하지 않아도 괜찮아요</strong><p>매일 보는 현상, 수업 중 생긴 질문, 해결해보고 싶은 불편함에서 시작할 수 있어요.</p></div></div></section>}
+      {step === 2 && <section className="step-panel"><div className="selection-summary"><span>선택한 관점</span><strong>{selectedNames.length ? selectedNames.join(" · ") : "아직 선택하지 않았어요"}</strong></div><div className="perspective-grid">{perspectives.map((p) => <button key={p.id} className={`perspective-card ${p.tint} ${selectedPerspectives.includes(p.id) ? "selected" : ""}`} onClick={() => togglePerspective(p.id)}><span className="perspective-icon">{p.icon}</span><span className="card-check">{selectedPerspectives.includes(p.id) ? "✓" : ""}</span><strong>{p.title}</strong><small>{p.desc}</small></button>)}</div></section>}
+      {step === 3 && <section className="step-panel"><div className="path-list">{paths.map((path) => <button key={path.id} className={`path-card ${selectedPath === path.id ? "selected" : ""}`} onClick={() => setSelectedPath(path.id)}><span className="path-icon">{path.icon}</span><span className="path-copy"><strong>{path.title}</strong><small>{path.desc}</small></span><span className="path-time">예상 {path.time}</span><span className="radio">{selectedPath === path.id ? "✓" : ""}</span></button>)}</div><div className="path-preview"><div><span className="preview-label">선택한 경로</span><h3>{paths.find((p) => p.id === selectedPath)?.title}</h3><p>{paths.find((p) => p.id === selectedPath)?.desc}</p></div><span className="preview-arrow">→</span></div></section>}
+      {step === 4 && <section className="step-panel content-panel"><div className="topic-banner"><span className="topic-spark">✦</span><div><small>현재까지의 선택을 바탕으로 만든 탐구 주제</small><h3>{sessionTitle}</h3><div className="topic-tags">{selectedNames.map((name) => <span key={name}>{name}</span>)}<span>{paths.find((p) => p.id === selectedPath)?.title}</span></div></div><button onClick={() => setStep(5)}>주제 수정</button></div><div className="depth-tabs"><button className={activeDepth === "basic" ? "active" : ""} onClick={() => setActiveDepth("basic")}>기본 탐구 <small>핵심 질문과 관찰</small></button><button className={activeDepth === "advanced" ? "active" : ""} onClick={() => setActiveDepth("advanced")}>심화 탐구 <small>분석과 확장 질문</small></button></div><div className="content-check"><span className="check-badge">✓</span><div><strong>{activeDepth === "basic" ? "먼저 이 정도로 시작해보세요" : "여기서 한 단계 더 깊게"}</strong><p>{activeDepth === "basic" ? "학교 안에서 일회용품이 얼마나 사용되는지 관찰하고, 사용이 많은 상황과 이유를 찾아봅니다." : "학급별·시간대별 차이를 비교하고, 비용과 환경 영향을 함께 고려해 실천 가능한 대안을 설계합니다."}</p></div></div><div className="question-grid"><div><span>핵심 질문</span><strong>{activeDepth === "basic" ? "우리 학교에서 일회용품 사용이 많은 상황은 언제일까?" : "사용량을 줄이는 방법 중 가장 지속 가능한 방법은 무엇일까?"}</strong></div><div><span>추천 자료</span><strong>{activeDepth === "basic" ? "관찰 기록 · 학생 인터뷰 · 사용량 체크표" : "설문 통계 · 사례 비교 · 비용 계산표"}</strong></div></div></section>}
+      {step === 5 && <section className="step-panel editor-panel"><div className="editor-top"><div><span className="kicker">REPORT TITLE</span><input className="title-input" value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} /></div><span className="edit-hint">내용을 클릭해 바로 수정하세요</span></div><div className="report-editor"><div className="toc"><div className="toc-title">목차 <span>5</span></div>{sections.map((section, index) => <button key={section.id} className={index === 0 ? "active" : ""}><span>0{index + 1}</span>{section.title.replace(/^\d\. /, "")}</button>)}</div><div className="section-editor">{sections.map((section) => <article key={section.id} className="editable-section"><div><span className="section-number">{section.title.split(".")[0]}</span><div><h3>{section.title.replace(/^\d\. /, "")}</h3><small>{section.prompt}</small></div></div><textarea value={section.body} onChange={(e) => updateSection(section.id, e.target.value)} /></article>)}</div></div></section>}
+      {step === 6 && <section className="step-panel complete-panel"><div className="complete-icon">✓</div><h3>{studentName}님의 탐구 설계가 완성되었어요</h3><p>이제 보고서를 작성하며 궁금증을 직접 확인해보세요.</p><div className="complete-summary"><div><span>탐구 주제</span><strong>{sessionTitle}</strong></div><div><span>탐구 관점</span><strong>{selectedNames.join(" · ")}</strong></div><div><span>탐구 경로</span><strong>{paths.find((p) => p.id === selectedPath)?.title}</strong></div></div><button className="primary-button" onClick={saveSession}>✦ 탐구 세션 저장하기 <span>→</span></button></section>}
+      <footer className="step-actions"><button className="back-button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>← 이전</button><div className="action-right"><span className="autosave"><span className="status-dot" /> {savedAt ? "자동 저장됨" : "입력 내용을 저장하고 있어요"}</span>{step < 6 && <button className="primary-button" onClick={() => setStep(Math.min(6, step + 1))}>{step === 5 ? "완성 화면으로" : "다음 단계"} <span>→</span></button>}</div></footer>
+    </section>
+    {toast && <div className="toast">✓ {toast}</div>}
+  </main>;
 }
-function Agent({ icon, name, text }: { icon: string; name: string; text: string }) { return <div className="agent"><span className="agent-icon">{icon}</span><div><strong>{name}</strong><small>{text}</small></div><span className="agent-check">✓</span></div>; }
-function Pipeline({ n, title, done }: { n: string; title: string; done: boolean }) { return <div className={`pipeline-item ${done ? "done" : ""}`}><span className="pipeline-num">{done ? "✓" : n}</span><strong>{title}</strong></div>; }
-function History({ saved }: { saved: { id: string; date: string; results: Result[] }[] }) { return <div className="history"><div className="history-top"><p>저장된 초안을 다시 확인할 수 있습니다.</p><span>{saved.length}건</span></div>{saved.length ? saved.map((x, i) => <div className="history-row" key={`${x.id}-${i}`}><div className="history-icon">▤</div><div><strong>{x.id}</strong><small>{x.results.map(r => r.subject).join(" · ")}</small></div><time>{x.date}</time><span>→</span></div>) : <div className="history-empty">아직 저장된 내역이 없습니다.<br />초안을 생성하고 저장해 보세요.</div>}</div>; }
