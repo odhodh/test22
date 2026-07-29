@@ -120,6 +120,7 @@ export default function Home() {
   const [aiContent, setAiContent] = useState<AIContent | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiStatus, setAiStatus] = useState("");
+  const [serverConfigured, setServerConfigured] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem("inquiry-studio-draft");
@@ -141,6 +142,7 @@ export default function Home() {
     if (settings) { try { const value = JSON.parse(settings); setKey(value.key || ""); setModel(value.model || "Gemini 3.5 Flash-Lite"); } catch { /* use defaults */ } }
   }, []);
   useEffect(() => { if (key || model) localStorage.setItem("inquiry-studio-settings", JSON.stringify({ key, model })); }, [key, model]);
+  useEffect(() => { fetch("/api/inquiry/config").then((response) => response.json()).then((data: { serverConfigured?: boolean }) => setServerConfigured(Boolean(data.serverConfigured))).catch(() => setServerConfigured(false)); }, []);
 
   const selectedNames = useMemo(() => perspectives.filter((p) => selectedPerspectives.includes(p.id)).map((p) => p.title), [selectedPerspectives]);
   const primaryPerspective = perspectives.find((p) => p.id === selectedPerspectives[0]);
@@ -153,7 +155,7 @@ export default function Home() {
   const saveSession = () => { setSessions((current) => [{ title: activeTopic, date: new Date().toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) }, ...current]); notify("탐구 세션을 저장했어요"); };
 
   async function generateWithGoogle() {
-    setAiLoading(true); setAiStatus("Gemini가 주제에 맞는 탐구 내용을 찾고 있어요...");
+    setAiLoading(true); setAiStatus(serverConfigured ? "Vercel 서버의 Gemini API로 탐구 내용을 생성하고 있어요..." : "Gemini가 주제에 맞는 탐구 내용을 찾고 있어요...");
     try {
       const response = await fetch("/api/inquiry/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: key || undefined, model, interest, perspectives: selectedNames, path: pathTitle }) });
       const data = await response.json() as AIContent & { error?: string };
